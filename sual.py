@@ -35,9 +35,70 @@ async def on_ready():
     description="Report da set",
     guild=discord.Object(id=labid)
 )
-async def set_report(interaction: discord.Interaction, winner: str, winner_score: str, loser: str, loser_score: str):
-    challonge_obj.find_matches(current_tournament_id, ) #tryna search... the thingy... based on the .. thing... 
+async def set_report(interaction: discord.Interaction, winner: str, winner_score: int, loser: str, loser_score: int):
+    # we get every single match in the tournament
+    matches = challonge_obj.find_matches(current_tournament_id, per_page=99999)
+    for match in matches:
+        # make sure to not edit the match if its complete
+        if match.attributes.state == "complete":
+            continue
+        # try block in case some attributes dont exist
+        try:
+            # initialize player 1 and player 2
+            p1_id = ""
+            p2_id = ""
+            # go through the points by participant attribute to get the ids
+            # there is no better way to do this
+            for x in match.attributes.points_by_participant:
+                if p1_id == "":
+                    p1_id = str(x.participant_id)
+                else:
+                    p2_id = str(x.participant_id)
+            # get the player objects
+            player_1 = challonge_obj.show_participant(current_tournament_id, p1_id)
+            player_2 = challonge_obj.show_participant(current_tournament_id, p2_id)
 
+            # validation to make sure we are modifying the right set, and to set the winner and loser ids
+            if player_1.attributes.name == winner and player_2.attributes.name == loser:
+                winner_id = player_1.id
+                loser_id = player_2.id
+
+            elif player_2.attributes.name == winner and player_1.attributes.name == loser:
+                winner_id = player_2.id
+                loser_id = player_1.id
+
+            else:
+                continue
+
+            # the challonge v2 api is super weird
+            # im gonna make this code better later but for now it lowkey sucks, just dm me with your questions `jozz024`
+            winner_str_score = "1,1" if loser_score == 0 else "1,0,1"
+            loser_str_score = "0,0" if loser_score == 0 else "0,1,0"
+            match_attributes = {
+                "match": [
+                    {
+                        "participant_id": winner_id,
+                        "score_set": winner_str_score,
+                        "rank": 1,
+                        "advancing": True
+                    },
+                    {
+                        "participant_id": loser_id,
+                        "score_set": loser_str_score,
+                        "rank": 2,
+                        "advancing": False
+                    }
+                ],
+                "tie": False,
+            }
+
+            # set the match to the reported score
+            challonge_obj.update_match(current_tournament_id, match.id, match_attributes)
+            # send a message to the discord channel
+            await interaction.response.send_message(f"Reported {winner} vs {loser} with score {winner_score} - {loser_score}")
+            return
+        except AttributeError:
+            continue
 
 @bot.tree.command(
     name="set_tournament",
