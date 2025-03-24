@@ -6,10 +6,11 @@ import os
 from challonge import Challonge
 from discord.ext import commands
 from discord import app_commands
+from discord.ext.commands import Bot
 
 load_dotenv()  # take environment variables from .env.
 
-discord_token = os.getenv()["TOKEN"]
+discord_token = os.getenv("TOKEN")
 
 BOT_PREFIX = "%" #command prefix
 
