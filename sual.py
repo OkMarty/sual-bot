@@ -23,6 +23,8 @@ challonge_obj = Challonge(api_key=os.getenv("CHALLONGE_API_KEY"))
 
 current_tournament_id = ""
 
+signup_channels = []
+
 ## changed this to on_ready because i realized what it was doing
 @bot.event
 async def on_ready():
@@ -37,6 +39,7 @@ async def on_ready():
 )
 async def set_report(interaction: discord.Interaction, winner: str, winner_score: int, loser: str, loser_score: int):
     # we get every single match in the tournament
+    
     matches = challonge_obj.find_matches(current_tournament_id, per_page=99999)
     for match in matches:
         # make sure to not edit the match if its complete
@@ -74,6 +77,7 @@ async def set_report(interaction: discord.Interaction, winner: str, winner_score
             # im gonna make this code better later but for now it lowkey sucks, just dm me with your questions `jozz024`
             winner_str_score = "1,1" if loser_score == 0 else "1,0,1"
             loser_str_score = "0,0" if loser_score == 0 else "0,1,0"
+
             match_attributes = {
                 "match": [
                     {
@@ -95,7 +99,7 @@ async def set_report(interaction: discord.Interaction, winner: str, winner_score
             # set the match to the reported score
             challonge_obj.update_match(current_tournament_id, match.id, match_attributes)
             # send a message to the discord channel
-            await interaction.response.send_message(f"Reported {winner} vs {loser} with score {winner_score} - {loser_score}")
+            await interaction.response.send_message(f"Reported {winner} vs {loser} with score {winner_score} - {loser_score}!")
             return
         except AttributeError:
             continue
@@ -109,9 +113,12 @@ async def set_tournament(interaction: discord.Interaction, tournament_id: str):
     # so current_tournament_id is a global variable
     # and so in functions we have to define global variables being changed as `global variable_name`
     # so we can set it
-    global current_tournament_id
-    current_tournament_id = tournament_id
-    await interaction.response.send_message(f"Set tournament to {challonge_obj.show_tournament(tournament_id).attributes.name}")
+    if any(role.permissions.administrator for role in interaction.user.roles):
+        global current_tournament_id
+        current_tournament_id = tournament_id
+        await interaction.response.send_message(f"Set tournament to {challonge_obj.show_tournament(tournament_id).attributes.name}")
+    else:
+        await interaction.response.send_message("You need to be an Admin to use this command!")
 
 @bot.tree.command(
     name="advance_stage",
@@ -119,10 +126,36 @@ async def set_tournament(interaction: discord.Interaction, tournament_id: str):
     guild=discord.Object(id=labid)
 )
 async def advance_stage(interaction: discord.Interaction):
-    challonge_obj.change_state_tournament(current_tournament_id, "finalize_group_stage")
+    if any(role.permissions.administrator for role in interaction.user.roles):
+     challonge_obj.change_state_tournament(current_tournament_id, "finalize_group_stage")
 
-    challonge_obj.change_state_tournament(current_tournament_id, "start")
+     challonge_obj.change_state_tournament(current_tournament_id, "start")
 
-    await interaction.response.send_message(f"Advanced tournament to the final stage")
+     await interaction.response.send_message(f"Advanced tournament to the final stage")
+    else:
+        await interaction.response.send_message("You need to be an Admin to use this command!")
+
+
+# iammartyb here, I'm thinking what I'm gonna do for signups is, they enabled signups, and people will then signup with a command. Then with a seperate command, it dms all the users to check in with a button
+# upon checking in, they are added to a list with their character they signed up with, and then when the bracket generator command is enabled, they all are added.
+
+
+
+@bot.tree.command(
+    name="read_signups",
+    description="Set the tournament",
+    guild=discord.Object(id=labid)
+)
+async def set_singups(interaction: discord.Interaction, tournament_id: str, signups_channel_id: str):
+    server_id = interaction.user.guild.id
+    guild = bot.getguild(server_id)
+    signup_channels.append(signups_channel_id)
+    for x in signup_channels:
+        channel = guild.get_channel(x)
+        print(f"{channel}")
+        # for message in channel.history(limit=None)
+            
+
+
 
 bot.run(bot_token) #turns on the bot
