@@ -35,7 +35,7 @@ async def on_ready():
     description="Report da set",
     guild=discord.Object(id=labid)
 )
-async def set_report(interaction: discord.Interaction, ):
+async def set_report(interaction: discord.Interaction, Winner: str, Loser: str, ):
     await interaction.response.send_message("Hello!")
 
 
