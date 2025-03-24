@@ -35,8 +35,8 @@ async def on_ready():
     description="Report da set",
     guild=discord.Object(id=labid)
 )
-async def set_report(interaction: discord.Interaction, Winner: str, Loser: str, ):
-    await interaction.response.send_message("Hello!")
+async def set_report(interaction: discord.Interaction, winner: str, winner_score: str, loser: str, loser_score: str):
+    challonge_obj.find_matches(current_tournament_id, ) #tryna search... the thingy... based on the .. thing... 
 
 
 @bot.tree.command(
