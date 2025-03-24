@@ -113,5 +113,16 @@ async def set_tournament(interaction: discord.Interaction, tournament_id: str):
     current_tournament_id = tournament_id
     await interaction.response.send_message(f"Set tournament to {challonge_obj.show_tournament(tournament_id).attributes.name}")
 
+@bot.tree.command(
+    name="advance_stage",
+    description="Advance the tournament to the final stage",
+    guild=discord.Object(id=labid)
+)
+async def advance_stage(interaction: discord.Interaction):
+    challonge_obj.change_state_tournament(current_tournament_id, "finalize_group_stage")
+
+    challonge_obj.change_state_tournament(current_tournament_id, "start")
+
+    await interaction.response.send_message(f"Advanced tournament to the final stage")
 
 bot.run(bot_token) #turns on the bot
